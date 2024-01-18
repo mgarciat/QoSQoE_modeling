@@ -119,16 +119,23 @@ classify_data <- function(train, test, cl='rpart', polr.start=NULL, form=form) {
     classifier <- NA;
     acc <- NA;
     output <- NULL;
-    cols <- names(train[,1:ncol(train)-1]);
+    #cols <- names(train[,1:ncol(train)-1]);
+    cols_aux <- names(train);
+    cols <- cols_aux[1:ncol(train)-1];
     
+    #message(paste("  1:", cols));
     if (cl == 'rpart') {
         train$mos <- as.numeric(train$mos);
         test$mos <- as.numeric(test$mos);
+        #message("  2");
         
         model <- rpartScore(form, data=train,split="abs",prune="mr", control=rpart.control(minsplit=10,cp=0.01));
-        predict <- predict(model, test[,c(cols)],model=TRUE);
+        #message("  3");
+
+        predict <- predict(model, test[,c(cols),drop=FALSE],model=TRUE);
         #conf.mat <- table(test[,"mos"], predict);
         #acc <- sum(diag(conf.mat))/sum(conf.mat);
+        #message("  4");
 
         nvals <- length(predict);
         total <- 0;
@@ -142,7 +149,7 @@ classify_data <- function(train, test, cl='rpart', polr.start=NULL, form=form) {
         output <- list(acc=acc,polr.start=NULL);
     } else if (cl == 'ordinalRF') {        
         model <- ordfor("mos", train, naive=FALSE, nsets=5000, ntreeperdiv=10, ntreefinal=5000, nbest=10);
-        predict <- predict(model, newdata=test[,c(cols)]);
+        predict <- predict(model, newdata=test[,c(cols),drop=FALSE]);
         
         test_labels <- as.integer(test[,"mos"]);
         pred_labels <- as.integer(predict$ypred);
@@ -164,7 +171,7 @@ classify_data <- function(train, test, cl='rpart', polr.start=NULL, form=form) {
         } else {
             model <- polr(form, data = train, Hess=FALSE, method="logistic", start=polr.start);
         }
-        predict <- predict(model, newdata=test[,c(cols)]);
+        predict <- predict(model, newdata=test[,c(cols),drop=FALSE]);
         
         test_labels <- as.integer(test[,"mos"]);
         pred_labels <- as.integer(predict);
